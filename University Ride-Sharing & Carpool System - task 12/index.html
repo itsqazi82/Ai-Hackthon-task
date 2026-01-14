@@ -1,0 +1,1173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>UniRide – Smart Campus Carpool</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap">
+    
+    <style>
+        :root {
+            --primary: #22c55e;
+            --primary-dark: #16a34a;
+            --primary-light: #4ade80;
+            --dark-bg: #020617;
+            --card-bg: #0f172a;
+            --text: #f8fafc;
+            --text-muted: #94a3b8;
+            --border: #1e293b;
+            --success: #22c55e;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3);
+            --radius: 12px;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--dark-bg);
+            color: var(--text);
+            line-height: 1.6;
+            min-height: 100vh;
+        }
+        
+        header {
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            padding: 1.5rem 1rem;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        header::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" preserveAspectRatio="none" opacity="0.1"><path d="M0,0 L100,0 L100,100 Z" fill="white"/></svg>');
+            background-size: cover;
+        }
+        
+        .header-content {
+            position: relative;
+            z-index: 1;
+        }
+        
+        h1 {
+            font-size: 2.2rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+        }
+        
+        .tagline {
+            font-size: 1.1rem;
+            opacity: 0.9;
+            margin-bottom: 1rem;
+        }
+        
+        .stats {
+            display: flex;
+            justify-content: center;
+            gap: 2rem;
+            flex-wrap: wrap;
+            margin-top: 1rem;
+        }
+        
+        .stat {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 0.75rem 1.5rem;
+            border-radius: 50px;
+            backdrop-filter: blur(5px);
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 1.5rem;
+        }
+        
+        .card {
+            background: var(--card-bg);
+            border-radius: var(--radius);
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+            box-shadow: var(--shadow);
+            border: 1px solid var(--border);
+        }
+        
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.25rem;
+        }
+        
+        .card-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: var(--primary);
+        }
+        
+        .card-title i {
+            margin-right: 0.5rem;
+        }
+        
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+            gap: 1rem;
+        }
+        
+        .form-group {
+            margin-bottom: 1rem;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+            color: var(--text-muted);
+        }
+        
+        input, select, button {
+            width: 100%;
+            padding: 0.75rem 1rem;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            font-family: 'Inter', sans-serif;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+        }
+        
+        input, select {
+            background: rgba(2, 6, 23, 0.5);
+            color: var(--text);
+        }
+        
+        input:focus, select:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.2);
+        }
+        
+        button {
+            background: var(--primary);
+            color: white;
+            font-weight: 600;
+            cursor: pointer;
+            border: none;
+        }
+        
+        button:hover {
+            background: var(--primary-dark);
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(34, 197, 94, 0.3);
+        }
+        
+        button:disabled {
+            background: #475569;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+        
+        .btn-secondary {
+            background: #475569;
+        }
+        
+        .btn-secondary:hover {
+            background: #64748b;
+        }
+        
+        .rides-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 1rem;
+        }
+        
+        @media (max-width: 768px) {
+            .rides-container {
+                grid-template-columns: 1fr;
+            }
+            
+            .grid {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        .ride-card {
+            background: var(--dark-bg);
+            padding: 1.25rem;
+            border-radius: var(--radius);
+            border-left: 4px solid var(--primary);
+            transition: transform 0.3s ease;
+        }
+        
+        .ride-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.3);
+        }
+        
+        .ride-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 0.75rem;
+        }
+        
+        .ride-route {
+            font-weight: 700;
+            font-size: 1.1rem;
+            color: var(--primary-light);
+        }
+        
+        .status {
+            font-size: 0.75rem;
+            padding: 0.25rem 0.75rem;
+            border-radius: 50px;
+            font-weight: 600;
+        }
+        
+        .open { 
+            background: rgba(34, 197, 94, 0.2);
+            color: var(--success);
+        }
+        
+        .full { 
+            background: rgba(239, 68, 68, 0.2);
+            color: var(--danger);
+        }
+        
+        .ride-details {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1rem;
+            margin: 1rem 0;
+        }
+        
+        .detail {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.9rem;
+        }
+        
+        .detail i {
+            color: var(--primary);
+            width: 16px;
+        }
+        
+        .ride-price {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--primary);
+            margin: 1rem 0;
+        }
+        
+        .map-container {
+            height: 300px;
+            border-radius: var(--radius);
+            overflow: hidden;
+            margin-top: 1rem;
+        }
+        
+        .history-list {
+            list-style: none;
+        }
+        
+        .history-item {
+            padding: 1rem;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .history-item:last-child {
+            border-bottom: none;
+        }
+        
+        .history-date {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+        }
+        
+        .tabs {
+            display: flex;
+            border-bottom: 1px solid var(--border);
+            margin-bottom: 1.5rem;
+        }
+        
+        .tab {
+            padding: 0.75rem 1.5rem;
+            cursor: pointer;
+            font-weight: 500;
+            border-bottom: 3px solid transparent;
+        }
+        
+        .tab.active {
+            border-bottom: 3px solid var(--primary);
+            color: var(--primary);
+        }
+        
+        .tab-content {
+            display: none;
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
+        
+        .toast {
+            position: fixed;
+            bottom: 1.5rem;
+            right: 1.5rem;
+            background: var(--primary);
+            color: white;
+            padding: 1rem 1.5rem;
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            transform: translateY(100px);
+            opacity: 0;
+            transition: all 0.5s ease;
+        }
+        
+        .toast.show {
+            transform: translateY(0);
+            opacity: 1;
+        }
+        
+        .toast.error {
+            background: var(--danger);
+        }
+        
+        .empty-state {
+            text-align: center;
+            padding: 3rem 1rem;
+            color: var(--text-muted);
+        }
+        
+        .empty-state i {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            opacity: 0.5;
+        }
+        
+        .mobile-menu {
+            display: none;
+            background: var(--card-bg);
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            padding: 0.75rem;
+            border-top: 1px solid var(--border);
+            z-index: 100;
+        }
+        
+        .mobile-menu-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            color: var(--text-muted);
+            text-decoration: none;
+            font-size: 0.8rem;
+        }
+        
+        .mobile-menu-item.active {
+            color: var(--primary);
+        }
+        
+        .mobile-menu-item i {
+            font-size: 1.25rem;
+            margin-bottom: 0.25rem;
+        }
+        
+        @media (max-width: 768px) {
+            .mobile-menu {
+                display: flex;
+                justify-content: space-around;
+            }
+            
+            .container {
+                padding-bottom: 5rem;
+            }
+            
+            h1 {
+                font-size: 1.75rem;
+            }
+            
+            .stats {
+                gap: 1rem;
+            }
+            
+            .stat {
+                padding: 0.5rem 1rem;
+                font-size: 0.9rem;
+            }
+        }
+        
+        .console-log {
+            background: #1a1a1a;
+            color: #00ff00;
+            padding: 1rem;
+            border-radius: var(--radius);
+            font-family: 'Courier New', monospace;
+            font-size: 0.85rem;
+            max-height: 200px;
+            overflow-y: auto;
+            margin-top: 1rem;
+        }
+        
+        .console-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.5rem;
+        }
+        
+        .console-title {
+            font-weight: 600;
+            color: #00ff00;
+        }
+        
+        .clear-console {
+            background: transparent;
+            color: #00ff00;
+            border: 1px solid #00ff00;
+            width: auto;
+            padding: 0.25rem 0.75rem;
+            font-size: 0.75rem;
+        }
+        
+        .clear-console:hover {
+            background: rgba(0, 255, 0, 0.1);
+        }
+    </style>
+</head>
+
+<body>
+    <header>
+        <div class="header-content">
+            <h1><i class="fas fa-car"></i> UniRide</h1>
+            <p class="tagline">Smart Campus Carpool - Save Fuel • Reduce Traffic • Go Green 🌱</p>
+            <div class="stats">
+                <div class="stat" id="totalRides">Total Rides: 0</div>
+                <div class="stat" id="availableSeats">Available Seats: 0</div>
+                <div class="stat" id="usersOnline">Active Users: 1</div>
+            </div>
+        </div>
+    </header>
+    
+    <div class="container">
+        <!-- Tabs for navigation -->
+        <div class="tabs" id="tabs">
+            <div class="tab active" data-tab="post">Post Ride</div>
+            <div class="tab" data-tab="search">Find Rides</div>
+            <div class="tab" data-tab="map">Route Map</div>
+            <div class="tab" data-tab="history">History</div>
+            <div class="tab" data-tab="console">Console</div>
+        </div>
+        
+        <!-- Post Ride Tab -->
+        <div class="tab-content active" id="post-tab">
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="card-title"><i class="fas fa-plus-circle"></i> Post a New Ride</h2>
+                </div>
+                <div class="grid">
+                    <div class="form-group">
+                        <label for="driver"><i class="fas fa-user"></i> Driver Name</label>
+                        <input type="text" id="driver" placeholder="Enter your name">
+                    </div>
+                    <div class="form-group">
+                        <label for="vehicle"><i class="fas fa-car"></i> Vehicle Type</label>
+                        <input type="text" id="vehicle" placeholder="e.g., Honda Civic, Toyota Corolla">
+                    </div>
+                    <div class="form-group">
+                        <label for="contact"><i class="fas fa-phone"></i> Contact Number</label>
+                        <input type="text" id="contact" placeholder="Enter phone number">
+                    </div>
+                    <div class="form-group">
+                        <label for="from"><i class="fas fa-map-marker-alt"></i> Pickup Point</label>
+                        <input type="text" id="from" placeholder="e.g., Main Gate, Dormitory A">
+                    </div>
+                    <div class="form-group">
+                        <label for="to"><i class="fas fa-flag-checkered"></i> Drop Point</label>
+                        <input type="text" id="to" placeholder="e.g., Library, Engineering Building">
+                    </div>
+                    <div class="form-group">
+                        <label for="date"><i class="fas fa-calendar"></i> Date</label>
+                        <input type="date" id="date">
+                    </div>
+                    <div class="form-group">
+                        <label for="time"><i class="fas fa-clock"></i> Time</label>
+                        <input type="time" id="time">
+                    </div>
+                    <div class="form-group">
+                        <label for="seats"><i class="fas fa-chair"></i> Available Seats</label>
+                        <input type="number" id="seats" min="1" max="10" placeholder="1-10">
+                    </div>
+                    <div class="form-group">
+                        <label for="price"><i class="fas fa-tag"></i> Price per Seat (Rs)</label>
+                        <input type="number" id="price" placeholder="e.g., 50">
+                    </div>
+                </div>
+                <br>
+                <button onclick="postRide()"><i class="fas fa-paper-plane"></i> Post Ride</button>
+                <button class="btn-secondary" onclick="clearForm()" style="margin-top: 0.75rem;"><i class="fas fa-broom"></i> Clear Form</button>
+            </div>
+        </div>
+        
+        <!-- Search Rides Tab -->
+        <div class="tab-content" id="search-tab">
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="card-title"><i class="fas fa-search"></i> Find Available Rides</h2>
+                </div>
+                <div class="form-group">
+                    <input type="text" id="search" placeholder="Search by route, driver, or vehicle..." onkeyup="renderRides()">
+                </div>
+            </div>
+            
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="card-title"><i class="fas fa-list"></i> Available Rides</h2>
+                    <div class="status open" id="rideCount">0 rides found</div>
+                </div>
+                <div class="rides-container" id="rideList">
+                    <!-- Rides will be rendered here -->
+                </div>
+            </div>
+        </div>
+        
+        <!-- Map Tab -->
+        <div class="tab-content" id="map-tab">
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="card-title"><i class="fas fa-map"></i> Campus Route Map</h2>
+                    <button class="btn-secondary" onclick="drawRoute()" style="width: auto;"><i class="fas fa-route"></i> Refresh Route</button>
+                </div>
+                <div class="map-container" id="map"></div>
+                <p style="margin-top: 1rem; color: var(--text-muted); font-size: 0.9rem;">
+                    <i class="fas fa-info-circle"></i> The map shows common pickup and drop points across campus.
+                </p>
+            </div>
+        </div>
+        
+        <!-- History Tab -->
+        <div class="tab-content" id="history-tab">
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="card-title"><i class="fas fa-history"></i> Your Ride History</h2>
+                    <button class="btn-secondary" onclick="clearHistory()" style="width: auto;"><i class="fas fa-trash"></i> Clear History</button>
+                </div>
+                <ul class="history-list" id="history">
+                    <!-- History items will be rendered here -->
+                </ul>
+                <div id="emptyHistory" class="empty-state" style="display: none;">
+                    <i class="fas fa-history"></i>
+                    <h3>No ride history yet</h3>
+                    <p>Book a seat on a ride to see your history here.</p>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Console Tab -->
+        <div class="tab-content" id="console-tab">
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="card-title"><i class="fas fa-terminal"></i> Session Console</h2>
+                </div>
+                <p style="margin-bottom: 1rem;">View session data and application logs:</p>
+                
+                <div class="console-log" id="consoleOutput">
+                    <div class="console-header">
+                        <div class="console-title">Session Data Log</div>
+                        <button class="clear-console" onclick="clearConsole()">Clear Console</button>
+                    </div>
+                    <div id="consoleContent">
+                        <!-- Console logs will appear here -->
+                    </div>
+                </div>
+                
+                <div style="margin-top: 1rem; display: flex; gap: 0.5rem;">
+                    <button class="btn-secondary" onclick="logSessionData()" style="width: auto;">
+                        <i class="fas fa-database"></i> Log Session Data
+                    </button>
+                    <button class="btn-secondary" onclick="exportData()" style="width: auto;">
+                        <i class="fas fa-download"></i> Export Data
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Toast notification -->
+    <div class="toast" id="toast">
+        <i class="fas fa-check-circle"></i>
+        <span id="toastMessage">Ride posted successfully!</span>
+    </div>
+    
+    <!-- Mobile menu -->
+    <div class="mobile-menu">
+        <a href="#" class="mobile-menu-item active" data-tab="post">
+            <i class="fas fa-plus-circle"></i>
+            <span>Post</span>
+        </a>
+        <a href="#" class="mobile-menu-item" data-tab="search">
+            <i class="fas fa-search"></i>
+            <span>Search</span>
+        </a>
+        <a href="#" class="mobile-menu-item" data-tab="map">
+            <i class="fas fa-map"></i>
+            <span>Map</span>
+        </a>
+        <a href="#" class="mobile-menu-item" data-tab="history">
+            <i class="fas fa-history"></i>
+            <span>History</span>
+        </a>
+        <a href="#" class="mobile-menu-item" data-tab="console">
+            <i class="fas fa-terminal"></i>
+            <span>Console</span>
+        </a>
+    </div>
+    
+    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+    <script>
+        // Initialize session storage and console
+        let rides = JSON.parse(sessionStorage.getItem("uniride_rides")) || [];
+        let history = JSON.parse(sessionStorage.getItem("uniride_history")) || [];
+        let consoleLogs = JSON.parse(sessionStorage.getItem("uniride_console")) || [];
+        let sessionId = sessionStorage.getItem("uniride_session_id") || generateSessionId();
+        
+        // Store session ID if not already stored
+        sessionStorage.setItem("uniride_session_id", sessionId);
+        
+        // Initialize map
+        const map = L.map('map').setView([24.8607, 67.0011], 14);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+        }).addTo(map);
+        
+        // Add some campus markers
+        const campusLocations = [
+            { name: "Main Gate", coords: [24.8607, 67.0011] },
+            { name: "Library", coords: [24.8625, 67.0030] },
+            { name: "Engineering Building", coords: [24.8630, 66.9980] },
+            { name: "Student Dormitory", coords: [24.8580, 67.0050] },
+            { name: "Sports Complex", coords: [24.8650, 67.0070] },
+            { name: "Cafeteria", coords: [24.8615, 67.0020] }
+        ];
+        
+        campusLocations.forEach(location => {
+            L.marker(location.coords)
+                .addTo(map)
+                .bindPopup(`<b>${location.name}</b><br>Common pickup/drop point`);
+        });
+        
+        // Initialize the app
+        document.addEventListener('DOMContentLoaded', function() {
+            renderRides();
+            renderHistory();
+            updateStats();
+            logToConsole(`Session started: ${sessionId}`, 'info');
+            logToConsole(`Loaded ${rides.length} rides from session storage`, 'info');
+            
+            // Set default date and time
+            const now = new Date();
+            document.getElementById('date').valueAsDate = now;
+            document.getElementById('time').value = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
+            
+            // Set up tab navigation
+            setupTabs();
+        });
+        
+        function generateSessionId() {
+            return 'session_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+        }
+        
+        function setupTabs() {
+            // Desktop tabs
+            const tabs = document.querySelectorAll('.tab');
+            tabs.forEach(tab => {
+                tab.addEventListener('click', () => {
+                    const tabId = tab.getAttribute('data-tab');
+                    switchTab(tabId);
+                    
+                    // Update active state
+                    tabs.forEach(t => t.classList.remove('active'));
+                    tab.classList.add('active');
+                });
+            });
+            
+            // Mobile menu tabs
+            const mobileTabs = document.querySelectorAll('.mobile-menu-item');
+            mobileTabs.forEach(tab => {
+                tab.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    const tabId = tab.getAttribute('data-tab');
+                    switchTab(tabId);
+                    
+                    // Update active state
+                    mobileTabs.forEach(t => t.classList.remove('active'));
+                    tab.classList.add('active');
+                    
+                    // Also update desktop tabs
+                    tabs.forEach(t => {
+                        t.classList.remove('active');
+                        if (t.getAttribute('data-tab') === tabId) {
+                            t.classList.add('active');
+                        }
+                    });
+                });
+            });
+        }
+        
+        function switchTab(tabId) {
+            // Hide all tab contents
+            const tabContents = document.querySelectorAll('.tab-content');
+            tabContents.forEach(content => content.classList.remove('active'));
+            
+            // Show selected tab content
+            document.getElementById(`${tabId}-tab`).classList.add('active');
+            
+            logToConsole(`Switched to ${tabId} tab`, 'info');
+        }
+        
+        function postRide() {
+            const ride = {
+                id: Date.now(),
+                driver: document.getElementById('driver').value.trim(),
+                vehicle: document.getElementById('vehicle').value.trim(),
+                contact: document.getElementById('contact').value.trim(),
+                from: document.getElementById('from').value.trim(),
+                to: document.getElementById('to').value.trim(),
+                date: document.getElementById('date').value,
+                time: document.getElementById('time').value,
+                seats: parseInt(document.getElementById('seats').value),
+                price: document.getElementById('price').value,
+                postedAt: new Date().toISOString()
+            };
+            
+            // Validation
+            if (Object.values(ride).some(v => v === "" || v === null || isNaN(ride.seats) || ride.seats < 1)) {
+                showToast("Please fill all fields correctly", "error");
+                logToConsole("Failed to post ride: Validation error", "error");
+                return;
+            }
+            
+            rides.push(ride);
+            sessionStorage.setItem("uniride_rides", JSON.stringify(rides));
+            
+            showToast("Ride posted successfully!");
+            logToConsole(`Ride posted: ${ride.from} to ${ride.to} by ${ride.driver}`, "success");
+            logToConsole(`Session data updated: ${rides.length} rides now stored`, "info");
+            
+            renderRides();
+            updateStats();
+            clearForm();
+            
+            // Switch to search tab to see the new ride
+            switchTab('search');
+            
+            // Update desktop tabs
+            document.querySelectorAll('.tab').forEach(tab => {
+                tab.classList.remove('active');
+                if (tab.getAttribute('data-tab') === 'search') {
+                    tab.classList.add('active');
+                }
+            });
+            
+            // Update mobile tabs
+            document.querySelectorAll('.mobile-menu-item').forEach(tab => {
+                tab.classList.remove('active');
+                if (tab.getAttribute('data-tab') === 'search') {
+                    tab.classList.add('active');
+                }
+            });
+        }
+        
+        function clearForm() {
+            document.getElementById('driver').value = '';
+            document.getElementById('vehicle').value = '';
+            document.getElementById('contact').value = '';
+            document.getElementById('from').value = '';
+            document.getElementById('to').value = '';
+            document.getElementById('seats').value = '';
+            document.getElementById('price').value = '';
+            
+            // Reset date and time to now
+            const now = new Date();
+            document.getElementById('date').valueAsDate = now;
+            document.getElementById('time').value = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
+            
+            logToConsole("Form cleared", "info");
+        }
+        
+        function renderRides() {
+            const list = document.getElementById("rideList");
+            const query = document.getElementById("search").value.toLowerCase();
+            const filteredRides = rides.filter(r => 
+                r.from.toLowerCase().includes(query) ||
+                r.to.toLowerCase().includes(query) ||
+                r.driver.toLowerCase().includes(query) ||
+                r.vehicle.toLowerCase().includes(query)
+            );
+            
+            // Update ride count
+            document.getElementById("rideCount").textContent = `${filteredRides.length} ride${filteredRides.length !== 1 ? 's' : ''} found`;
+            
+            if (filteredRides.length === 0) {
+                list.innerHTML = `
+                    <div class="empty-state" style="grid-column: 1 / -1;">
+                        <i class="fas fa-car"></i>
+                        <h3>No rides found</h3>
+                        <p>${query ? 'Try a different search or' : ''} post a new ride to get started.</p>
+                    </div>`;
+                return;
+            }
+            
+            list.innerHTML = "";
+            
+            filteredRides.forEach((r, i) => {
+                const isFull = r.seats === 0;
+                list.innerHTML += `
+                <div class="ride-card">
+                    <div class="ride-header">
+                        <div class="ride-route">${r.from} ➜ ${r.to}</div>
+                        <span class="status ${isFull ? 'full' : 'open'}">
+                            ${isFull ? 'FULL' : `${r.seats} SEAT${r.seats !== 1 ? 'S' : ''}`}
+                        </span>
+                    </div>
+                    
+                    <div class="ride-details">
+                        <div class="detail">
+                            <i class="fas fa-user"></i>
+                            <span>${r.driver}</span>
+                        </div>
+                        <div class="detail">
+                            <i class="fas fa-car"></i>
+                            <span>${r.vehicle}</span>
+                        </div>
+                        <div class="detail">
+                            <i class="fas fa-phone"></i>
+                            <span>${r.contact}</span>
+                        </div>
+                    </div>
+                    
+                    <div class="ride-details">
+                        <div class="detail">
+                            <i class="fas fa-calendar"></i>
+                            <span>${formatDate(r.date)}</span>
+                        </div>
+                        <div class="detail">
+                            <i class="fas fa-clock"></i>
+                            <span>${r.time}</span>
+                        </div>
+                    </div>
+                    
+                    <div class="ride-price">Rs ${r.price} <small style="font-size: 0.9rem; color: var(--text-muted);">per seat</small></div>
+                    
+                    <button onclick="bookSeat(${i})" ${isFull ? 'disabled' : ''}>
+                        <i class="fas fa-ticket-alt"></i> ${isFull ? 'No Seats Available' : 'Book Seat'}
+                    </button>
+                </div>`;
+            });
+        }
+        
+        function bookSeat(index) {
+            if (rides[index].seats > 0) {
+                rides[index].seats--;
+                
+                const historyItem = {
+                    id: Date.now(),
+                    rideId: rides[index].id,
+                    from: rides[index].from,
+                    to: rides[index].to,
+                    date: rides[index].date,
+                    time: rides[index].time,
+                    driver: rides[index].driver,
+                    bookedAt: new Date().toISOString()
+                };
+                
+                history.push(historyItem);
+                sessionStorage.setItem("uniride_rides", JSON.stringify(rides));
+                sessionStorage.setItem("uniride_history", JSON.stringify(history));
+                
+                showToast(`Seat booked on ride from ${rides[index].from} to ${rides[index].to}`);
+                logToConsole(`Seat booked: ${rides[index].from} to ${rides[index].to}`, "success");
+                logToConsole(`Session data updated: ${history.length} history items`, "info");
+                
+                renderRides();
+                renderHistory();
+                updateStats();
+                
+                // Refresh the map with the booked route
+                drawRoute(rides[index].from, rides[index].to);
+            }
+        }
+        
+        function renderHistory() {
+            const historyList = document.getElementById("history");
+            const emptyHistory = document.getElementById("emptyHistory");
+            
+            if (history.length === 0) {
+                historyList.innerHTML = "";
+                emptyHistory.style.display = "block";
+                return;
+            }
+            
+            emptyHistory.style.display = "none";
+            historyList.innerHTML = "";
+            
+            // Sort by most recent first
+            const sortedHistory = [...history].sort((a, b) => new Date(b.bookedAt) - new Date(a.bookedAt));
+            
+            sortedHistory.forEach(item => {
+                historyList.innerHTML += `
+                <li class="history-item">
+                    <div>
+                        <strong>${item.from} ➜ ${item.to}</strong><br>
+                        <small>Driver: ${item.driver} | ${formatDate(item.date)} ${item.time}</small>
+                    </div>
+                    <div class="history-date">
+                        ${formatTimeSince(item.bookedAt)}
+                    </div>
+                </li>`;
+            });
+        }
+        
+        function clearHistory() {
+            if (confirm("Are you sure you want to clear your ride history? This action cannot be undone.")) {
+                history = [];
+                sessionStorage.setItem("uniride_history", JSON.stringify(history));
+                renderHistory();
+                showToast("History cleared", "info");
+                logToConsole("Ride history cleared from session", "warning");
+            }
+        }
+        
+        function drawRoute(fromPoint, toPoint) {
+            // Clear existing map layers except base tile layer
+            map.eachLayer(layer => {
+                if (layer instanceof L.Marker || layer instanceof L.Polyline) {
+                    map.removeLayer(layer);
+                }
+            });
+            
+            // Re-add campus markers
+            campusLocations.forEach(location => {
+                L.marker(location.coords)
+                    .addTo(map)
+                    .bindPopup(`<b>${location.name}</b><br>Common pickup/drop point`);
+            });
+            
+            // If specific from/to points are provided, draw that route
+            if (fromPoint && toPoint) {
+                // Find approximate coordinates for the from and to points
+                const fromLocation = campusLocations.find(loc => 
+                    loc.name.toLowerCase().includes(fromPoint.toLowerCase()) || 
+                    fromPoint.toLowerCase().includes(loc.name.toLowerCase())
+                ) || campusLocations[0];
+                
+                const toLocation = campusLocations.find(loc => 
+                    loc.name.toLowerCase().includes(toPoint.toLowerCase()) || 
+                    toPoint.toLowerCase().includes(loc.name.toLowerCase())
+                ) || campusLocations[1];
+                
+                // Add markers for the route
+                L.marker(fromLocation.coords)
+                    .addTo(map)
+                    .bindPopup(`<b>Pickup:</b> ${fromPoint}`)
+                    .openPopup();
+                
+                L.marker(toLocation.coords)
+                    .addTo(map)
+                    .bindPopup(`<b>Drop:</b> ${toPoint}`);
+                
+                // Draw the route line
+                L.polyline([fromLocation.coords, toLocation.coords], { 
+                    color: '#22c55e',
+                    weight: 4,
+                    opacity: 0.7,
+                    dashArray: '10, 10'
+                }).addTo(map);
+                
+                logToConsole(`Route drawn: ${fromPoint} to ${toPoint}`, "info");
+            } else {
+                // Draw a sample route between main gate and library
+                L.polyline([campusLocations[0].coords, campusLocations[1].coords], { 
+                    color: '#22c55e',
+                    weight: 4,
+                    opacity: 0.7,
+                    dashArray: '10, 10'
+                }).addTo(map);
+                
+                logToConsole("Sample route drawn on map", "info");
+            }
+        }
+        
+        function updateStats() {
+            const totalRides = rides.length;
+            const availableSeats = rides.reduce((sum, ride) => sum + ride.seats, 0);
+            
+            document.getElementById("totalRides").textContent = `Total Rides: ${totalRides}`;
+            document.getElementById("availableSeats").textContent = `Available Seats: ${availableSeats}`;
+            document.getElementById("usersOnline").textContent = `Active Users: ${1 + Math.floor(Math.random() * 5)}`;
+        }
+        
+        function logToConsole(message, type = "info") {
+            const timestamp = new Date().toLocaleTimeString();
+            const logEntry = {
+                timestamp,
+                type,
+                message,
+                sessionId
+            };
+            
+            consoleLogs.push(logEntry);
+            sessionStorage.setItem("uniride_console", JSON.stringify(consoleLogs));
+            
+            // Also output to browser console
+            const consoleMethod = type === 'error' ? console.error : 
+                                 type === 'warning' ? console.warn : 
+                                 type === 'success' ? console.log : console.info;
+            
+            consoleMethod(`[UniRide ${timestamp}] ${message}`);
+            
+            // Update console display if we're on the console tab
+            updateConsoleDisplay();
+        }
+        
+        function updateConsoleDisplay() {
+            const consoleContent = document.getElementById("consoleContent");
+            if (!consoleContent) return;
+            
+            consoleContent.innerHTML = "";
+            
+            // Show only the last 20 logs
+            const recentLogs = [...consoleLogs].slice(-20);
+            
+            recentLogs.forEach(log => {
+                const logClass = log.type === 'error' ? 'color: #ff6b6b;' :
+                               log.type === 'warning' ? 'color: #ffd93d;' :
+                               log.type === 'success' ? 'color: #6bcf7f;' : 'color: #6cace4;';
+                
+                consoleContent.innerHTML += `
+                    <div style="margin-bottom: 0.25rem;">
+                        <span style="color: #aaa;">[${log.timestamp}]</span>
+                        <span style="${logClass}"> ${log.message}</span>
+                    </div>`;
+            });
+            
+            // Auto-scroll to bottom
+            consoleContent.scrollTop = consoleContent.scrollHeight;
+        }
+        
+        function clearConsole() {
+            consoleLogs = [];
+            sessionStorage.setItem("uniride_console", JSON.stringify(consoleLogs));
+            updateConsoleDisplay();
+            logToConsole("Console cleared", "warning");
+        }
+        
+        function logSessionData() {
+            logToConsole("=== SESSION DATA DUMP ===", "info");
+            logToConsole(`Session ID: ${sessionId}`, "info");
+            logToConsole(`Total rides: ${rides.length}`, "info");
+            logToConsole(`Total history items: ${history.length}`, "info");
+            logToConsole(`Total console logs: ${consoleLogs.length}`, "info");
+            
+            // Log ride details
+            rides.forEach((ride, index) => {
+                logToConsole(`Ride ${index + 1}: ${ride.from} → ${ride.to} (${ride.driver}, ${ride.seats} seats)`, "info");
+            });
+            
+            showToast("Session data logged to console", "info");
+        }
+        
+        function exportData() {
+            const data = {
+                sessionId,
+                exportDate: new Date().toISOString(),
+                rides,
+                history,
+                consoleLogs
+            };
+            
+            const dataStr = JSON.stringify(data, null, 2);
+            const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr);
+            
+            const exportFileDefaultName = `uniride_export_${sessionId}.json`;
+            
+            const linkElement = document.createElement('a');
+            linkElement.setAttribute('href', dataUri);
+            linkElement.setAttribute('download', exportFileDefaultName);
+            linkElement.click();
+            
+            logToConsole("Data exported to JSON file", "success");
+            showToast("Data exported successfully", "success");
+        }
+        
+        function showToast(message, type = "success") {
+            const toast = document.getElementById("toast");
+            const toastMessage = document.getElementById("toastMessage");
+            
+            toastMessage.textContent = message;
+            toast.className = "toast";
+            toast.classList.add(type);
+            
+            // Show toast
+            setTimeout(() => {
+                toast.classList.add("show");
+            }, 10);
+            
+            // Hide toast after 3 seconds
+            setTimeout(() => {
+                toast.classList.remove("show");
+            }, 3000);
+        }
+        
+        function formatDate(dateString) {
+            const date = new Date(dateString);
+            return date.toLocaleDateString('en-US', { 
+                weekday: 'short', 
+                month: 'short', 
+                day: 'numeric' 
+            });
+        }
+        
+        function formatTimeSince(dateString) {
+            const date = new Date(dateString);
+            const now = new Date();
+            const diffMs = now - date;
+            const diffMins = Math.floor(diffMs / 60000);
+            const diffHours = Math.floor(diffMs / 3600000);
+            const diffDays = Math.floor(diffMs / 86400000);
+            
+            if (diffMins < 60) {
+                return `${diffMins} min${diffMins !== 1 ? 's' : ''} ago`;
+            } else if (diffHours < 24) {
+                return `${diffHours} hour${diffHours !== 1 ? 's' : ''} ago`;
+            } else {
+                return `${diffDays} day${diffDays !== 1 ? 's' : ''} ago`;
+            }
+        }
+    </script>
+</body>
+</html>
