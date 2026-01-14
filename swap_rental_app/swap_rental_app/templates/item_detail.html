@@ -1,0 +1,68 @@
+{% extends "layout.html" %}
+{% block content %}
+<div class="row">
+    <div class="col-md-6">
+        <!-- Main Image -->
+        {% if item.image_url %}
+        <img src="{{ url_for('static', filename='images/' + item.image_url) }}" class="img-fluid rounded shadow mb-3" alt="{{ item.name }}">
+        {% else %}
+        <img src="{{ url_for('static', filename='images/default.jpg') }}" class="img-fluid rounded shadow mb-3" alt="Default">
+        {% endif %}
+    </div>
+
+    <div class="col-md-6">
+        <h2>{{ item.name }}</h2>
+        <p>{{ item.description }}</p>
+        <p><small>Owner: {{ item.owner.username }}</small></p>
+        <p class="text-success">{{ message }}</p>
+
+        <!-- Add Review -->
+        <h4>Add a Review</h4>
+        <form method="POST" class="mb-4">
+            <input type="text" name="reviewer" class="form-control mb-2" placeholder="Your Name" required>
+            <input type="number" name="rating" class="form-control mb-2" min="1" max="5" placeholder="Rating 1-5" required>
+            <input type="text" name="comment" class="form-control mb-2" placeholder="Comment" required>
+            <button class="btn btn-primary">Submit Review</button>
+        </form>
+    </div>
+</div>
+
+<!-- Reviews -->
+<h4 class="mt-4">Reviews</h4>
+<ul class="list-group mb-4">
+{% for r in item.reviews %}
+<li class="list-group-item d-flex justify-content-between align-items-center">
+    <div><strong>{{ r.reviewer.username }}</strong>: {{ r.comment }}</div>
+    <span class="badge bg-success rounded-pill">{{ r.rating }}/5</span>
+</li>
+{% else %}
+<li class="list-group-item">No reviews yet.</li>
+{% endfor %}
+</ul>
+
+<!-- Suggested Swap / Rental Items -->
+<h4>Suggested Swap / Rental Items</h4>
+<div class="row row-cols-1 row-cols-md-3 g-4">
+{% for s in suggestions %}
+<div class="col">
+    <div class="card h-100 shadow-sm border-0">
+        {% if s.image_url %}
+        <img src="{{ url_for('static', filename='images/' + s.image_url) }}" class="img-fluid rounded shadow mb-3" alt="{{ s.name }}">
+        {% else %}
+        <img src="{{ url_for('static', filename='images/default.jpg') }}" class="img-fluid rounded shadow mb-3" alt="Default">
+        {% endif %}
+
+        <div class="card-body">
+            <h5 class="card-title">{{ s.name }}</h5>
+            <p class="card-text text-truncate">{{ s.description }}</p>
+        </div>
+        <div class="card-footer bg-white border-0 text-end">
+            <a href="{{ url_for('item_detail', name=s.name) }}" class="btn btn-sm btn-success">View</a>
+        </div>
+    </div>
+</div>
+{% else %}
+<p class="mt-2">No suggested items available.</p>
+{% endfor %}
+</div>
+{% endblock %}
