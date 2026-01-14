@@ -1,0 +1,26 @@
+{% extends "layout.html" %}
+{% block content %}
+<h2 class="mb-3">Feed</h2>
+
+<!-- Create Post -->
+<div class="card mb-4">
+  <div class="card-body">
+    <form method="POST" class="d-flex gap-2">
+      <input type="text" name="username" class="form-control" placeholder="Your username" required>
+      <input type="text" name="content" class="form-control" placeholder="What's on your mind?" required>
+      <button type="submit" class="btn btn-primary">Post</button>
+    </form>
+  </div>
+</div>
+
+<!-- Posts -->
+{% for post in posts %}
+<div class="card mb-3 shadow-sm">
+  <div class="card-body">
+    <h5 class="card-title"><a href="{{ url_for('profile', username=post.author.username) }}">{{ post.author.username }}</a></h5>
+    <p class="card-text">{{ post.content }}</p>
+    <p class="card-text"><small class="text-muted">Likes: {{ post.likes|length }} | Comments: {{ post.comments|length }}</small></p>
+  </div>
+</div>
+{% endfor %}
+{% endblock %}
