@@ -1,0 +1,28 @@
+{% extends "layout.html" %}
+{% block content %}
+<h2>Search Resources</h2>
+<form method="GET" class="d-flex gap-2 mb-4">
+    <input type="text" name="keyword" class="form-control" placeholder="Search by name">
+    <select name="type" class="form-select">
+        <option value="">All types</option>
+        <option value="Lab">Lab</option>
+        <option value="Hall">Hall</option>
+        <option value="Equipment">Equipment</option>
+    </select>
+    <button class="btn btn-primary">Search</button>
+</form>
+
+<div class="row">
+{% for r in resources %}
+<div class="col-md-4 mb-3">
+    <div class="card shadow-sm">
+        <div class="card-body">
+            <h5 class="card-title">{{ r.name }}</h5>
+            <p class="card-text">Type: {{ r.type }}</p>
+            <a href="{{ url_for('resource_detail', name=r.name) }}" class="btn btn-success">View / Book</a>
+        </div>
+    </div>
+</div>
+{% endfor %}
+</div>
+{% endblock %}

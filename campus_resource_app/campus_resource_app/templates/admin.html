@@ -1,0 +1,34 @@
+{% extends "layout.html" %}
+{% block content %}
+<h2>Admin Dashboard</h2>
+<p class="text-success">{{ message }}</p>
+
+{% for r in resources %}
+<h4>{{ r.name }} ({{ r.type }})</h4>
+<table class="table table-bordered">
+<thead>
+<tr><th>User</th><th>Date</th><th>Time Slot</th><th>Status</th><th>Action</th></tr>
+</thead>
+<tbody>
+{% for b in r.bookings %}
+<tr>
+    <td>{{ b.user.username }}</td>
+    <td>{{ b.date }}</td>
+    <td>{{ b.time_slot }}</td>
+    <td>{{ b.status }}</td>
+    <td>
+    {% if b.status=="Pending" %}
+        <form method="POST" class="d-flex gap-1">
+            <input type="hidden" name="resource_name" value="{{ r.name }}">
+            <input type="hidden" name="booking_index" value="{{ loop.index0 }}">
+            <button class="btn btn-sm btn-success" name="action" value="approve">Approve</button>
+            <button class="btn btn-sm btn-danger" name="action" value="decline">Decline</button>
+        </form>
+    {% endif %}
+    </td>
+</tr>
+{% endfor %}
+</tbody>
+</table>
+{% endfor %}
+{% endblock %}

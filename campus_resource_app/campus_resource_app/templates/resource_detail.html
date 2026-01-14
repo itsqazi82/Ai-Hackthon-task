@@ -1,0 +1,31 @@
+{% extends "layout.html" %}
+{% block content %}
+<h2>{{ resource.name }} ({{ resource.type }})</h2>
+<p class="text-success">{{ message }}</p>
+
+<h4>Book this resource</h4>
+<form method="POST" class="mb-4">
+    <input type="text" name="username" class="form-control mb-2" placeholder="Your Name" required>
+    <input type="email" name="email" class="form-control mb-2" placeholder="Your Email" required>
+    <input type="date" name="date" class="form-control mb-2" required>
+    <input type="text" name="time_slot" class="form-control mb-2" placeholder="Time slot e.g. 09:00-11:00" required>
+    <button class="btn btn-primary">Book</button>
+</form>
+
+<h4>Existing Bookings</h4>
+<table class="table table-bordered">
+    <thead>
+        <tr><th>User</th><th>Date</th><th>Time Slot</th><th>Status</th></tr>
+    </thead>
+    <tbody>
+    {% for b in resource.bookings %}
+        <tr>
+            <td>{{ b.user.username }}</td>
+            <td>{{ b.date }}</td>
+            <td>{{ b.time_slot }}</td>
+            <td>{{ b.status }}</td>
+        </tr>
+    {% endfor %}
+    </tbody>
+</table>
+{% endblock %}
