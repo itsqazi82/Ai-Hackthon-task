@@ -1,0 +1,613 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QR Connect - Instant Friend Connections</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/qrcode-generator/qrcode.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background: linear-gradient(135deg, #6a11cb 0%, #2575fc 100%);
+            color: #333;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 40px;
+            color: white;
+            padding: 20px;
+            border-radius: 15px;
+            background-color: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        h1 {
+            font-size: 2.8rem;
+            margin-bottom: 10px;
+            text-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+        }
+
+        .subtitle {
+            font-size: 1.2rem;
+            opacity: 0.9;
+            max-width: 700px;
+            margin: 0 auto;
+            line-height: 1.6;
+        }
+
+        .instructions {
+            background-color: rgba(255, 255, 255, 0.15);
+            padding: 15px;
+            border-radius: 10px;
+            margin-top: 20px;
+            font-size: 1rem;
+        }
+
+        .people-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 30px;
+            margin-bottom: 50px;
+        }
+
+        .person-card {
+            background-color: white;
+            border-radius: 20px;
+            padding: 25px;
+            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.2);
+            transition: all 0.4s ease;
+            position: relative;
+            overflow: hidden;
+            cursor: pointer;
+        }
+
+        .person-card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 25px 40px rgba(0, 0, 0, 0.25);
+        }
+
+        .person-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 5px;
+            background: linear-gradient(90deg, #6a11cb, #2575fc);
+        }
+
+        .person-info {
+            display: flex;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .person-icon {
+            width: 70px;
+            height: 70px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #6a11cb, #2575fc);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 20px;
+            color: white;
+            font-size: 28px;
+            box-shadow: 0 5px 15px rgba(106, 17, 203, 0.4);
+        }
+
+        .person-name {
+            font-size: 1.6rem;
+            font-weight: 700;
+            color: #2c3e50;
+        }
+
+        .person-role {
+            color: #7f8c8d;
+            font-size: 0.95rem;
+            margin-top: 5px;
+        }
+
+        .qr-container {
+            text-align: center;
+            padding: 15px;
+            background-color: #f8f9fa;
+            border-radius: 15px;
+            margin-top: 15px;
+            transition: all 0.3s ease;
+            max-height: 0;
+            opacity: 0;
+            overflow: hidden;
+        }
+
+        .person-card:hover .qr-container {
+            max-height: 400px;
+            opacity: 1;
+        }
+
+        .qr-code {
+            padding: 15px;
+            background-color: white;
+            border-radius: 12px;
+            display: inline-block;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
+            margin: 0 auto;
+            position: relative;
+        }
+
+        .qr-center-icon {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(135deg, #6a11cb, #2575fc);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 18px;
+            box-shadow: 0 3px 8px rgba(0, 0, 0, 0.2);
+        }
+
+        .scan-hint {
+            font-size: 0.9rem;
+            color: #6a11cb;
+            margin-top: 10px;
+            font-weight: 600;
+        }
+
+        .qr-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.85);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease;
+        }
+
+        .qr-modal.active {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .modal-content {
+            background-color: white;
+            border-radius: 25px;
+            padding: 40px;
+            max-width: 500px;
+            width: 90%;
+            text-align: center;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.3);
+            transform: scale(0.9);
+            transition: transform 0.4s ease;
+        }
+
+        .qr-modal.active .modal-content {
+            transform: scale(1);
+        }
+
+        .modal-qr-code {
+            margin: 25px auto;
+            padding: 20px;
+            background-color: white;
+            border-radius: 15px;
+            display: inline-block;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+            position: relative;
+        }
+
+        .modal-close {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: none;
+            border: none;
+            color: white;
+            font-size: 28px;
+            cursor: pointer;
+            transition: transform 0.3s ease;
+        }
+
+        .modal-close:hover {
+            transform: scale(1.2);
+        }
+
+        .modal-person-name {
+            font-size: 2.2rem;
+            color: #2c3e50;
+            margin-bottom: 10px;
+        }
+
+        .modal-person-details {
+            color: #7f8c8d;
+            font-size: 1.1rem;
+            line-height: 1.6;
+            margin-bottom: 25px;
+        }
+
+        .scan-instruction {
+            background-color: #f8f9fa;
+            padding: 15px;
+            border-radius: 10px;
+            margin-top: 20px;
+            color: #6a11cb;
+            font-weight: 600;
+        }
+
+        .footer {
+            text-align: center;
+            color: white;
+            margin-top: 40px;
+            padding-top: 20px;
+            border-top: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .qr-scanner-btn {
+            background: linear-gradient(135deg, #6a11cb, #2575fc);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 50px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 30px auto;
+            box-shadow: 0 10px 20px rgba(106, 17, 203, 0.3);
+            transition: all 0.3s ease;
+        }
+
+        .qr-scanner-btn:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 25px rgba(106, 17, 203, 0.4);
+        }
+
+        .qr-scanner-btn i {
+            margin-right: 10px;
+            font-size: 1.3rem;
+        }
+
+        @media (max-width: 768px) {
+            .people-grid {
+                grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+                gap: 20px;
+            }
+            
+            h1 {
+                font-size: 2.2rem;
+            }
+            
+            .modal-content {
+                padding: 25px;
+            }
+            
+            .modal-person-name {
+                font-size: 1.8rem;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .people-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            h1 {
+                font-size: 1.8rem;
+            }
+            
+            .person-name {
+                font-size: 1.4rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1><i class="fas fa-qrcode"></i> QR Connect</h1>
+            <p class="subtitle">Instantly connect with friends by scanning QR codes. No more searching for usernames or phone numbers. Just scan and connect!</p>
+            <div class="instructions">
+                <p><i class="fas fa-mouse-pointer"></i> Hover over any friend card to view their QR code</p>
+                <p><i class="fas fa-hand-pointer"></i> Click on the card to enlarge QR code for scanning</p>
+                <p><i class="fas fa-mobile-alt"></i> Scan with your mobile device to view friend details</p>
+            </div>
+        </header>
+
+        <button class="qr-scanner-btn" id="scanQRBtn">
+            <i class="fas fa-camera"></i> Open QR Code Scanner
+        </button>
+
+        <div class="people-grid" id="peopleGrid">
+            <!-- People cards will be generated by JavaScript -->
+        </div>
+
+        <div class="qr-modal" id="qrModal">
+            <button class="modal-close" id="modalClose">&times;</button>
+            <div class="modal-content">
+                <div id="modalContent">
+                    <!-- Modal content will be populated by JavaScript -->
+                </div>
+            </div>
+        </div>
+
+        <div class="footer">
+            <p>QR Connect &copy; 2023 | Instant Friend Connection Platform</p>
+            <p>Scan any QR code with your mobile device to view friend details</p>
+        </div>
+    </div>
+
+    <script>
+        // Friend data
+        const friends = [
+            {
+                id: 1,
+                name: "Abdul Rehman",
+                role: "Software Engineer",
+                email: "abdul.rehman@example.com",
+                phone: "+92 306 1929022",
+                location: "Karachi, Pakistan",
+                interests: "Web Development, AI, Photography"
+            },
+            {
+                id: 2,
+                name: "Hashir Junaid",
+                role: "UX/UI Designer",
+                email: "hashir.junaid@example.com",
+                phone: "+92 321 9876543",
+                location: "Karachi, Pakistan",
+                interests: "Design Systems, Prototyping, Illustration"
+            },
+            {
+                id: 3,
+                name: "Taha Haider",
+                role: "Data Scientist",
+                email: "taha.haider@example.com",
+                phone: "+92 333 4567890",
+                location: "Islamabad, Pakistan",
+                interests: "Machine Learning, Python, Big Data"
+                //img from ima
+            },
+            {
+                id: 4,
+                name: "Abdul Haseeb",
+                role: "Mobile App Developer",
+                email: "abdul.haseeb@example.com",
+                phone: "+92 334 2102118",
+                location: "Faisalabad, Pakistan",
+                interests: "Flutter, React Native, IoT"
+            }
+        ];
+
+        // Generate QR codes for each friend
+        function generateQRCode(text, elementId, size = 128) {
+            const qr = qrcode(0, 'M');
+            qr.addData(text);
+            qr.make();
+            
+            const qrElement = document.getElementById(elementId);
+            if (qrElement) {
+                qrElement.innerHTML = qr.createImgTag(5);
+                const img = qrElement.querySelector('img');
+                img.style.width = `${size}px`;
+                img.style.height = `${size}px`;
+                
+                // Add center icon to QR code
+                const centerIcon = document.createElement('div');
+                centerIcon.className = 'qr-center-icon';
+                centerIcon.innerHTML = '<i class="fas fa-user"></i>';
+                qrElement.appendChild(centerIcon);
+            }
+        }
+
+        // Create friend cards
+        function createFriendCards() {
+            const peopleGrid = document.getElementById('peopleGrid');
+            
+            friends.forEach(friend => {
+                // Create card container
+                const card = document.createElement('div');
+                card.className = 'person-card';
+                card.dataset.id = friend.id;
+                
+                // Friend info (visible always)
+                const infoHTML = `
+                    <div class="person-info">
+                        <div class="person-icon">
+                            <i class="fas fa-user"></i>
+                        </div>
+                        <div>
+                            <h2 class="person-name">${friend.name}</h2>
+                            <p class="person-role">${friend.role}</p>
+                        </div>
+                    </div>
+                    <div class="qr-container" id="qrContainer${friend.id}">
+                        <!-- QR code will be generated here -->
+                        <div class="qr-code" id="qrCode${friend.id}"></div>
+                        <p class="scan-hint">Scan to connect with ${friend.name.split(' ')[0]}</p>
+                    </div>
+                `;
+                
+                card.innerHTML = infoHTML;
+                
+                // Add click event to show modal
+                card.addEventListener('click', () => showFriendModal(friend));
+                
+                peopleGrid.appendChild(card);
+                
+                // Generate QR code for this friend
+                const qrData = JSON.stringify({
+                    name: friend.name,
+                    role: friend.role,
+                    email: friend.email,
+                    phone: friend.phone,
+                    location: friend.location,
+                    interests: friend.interests,
+                    platform: "QR Connect"
+                });
+                
+                generateQRCode(qrData, `qrCode${friend.id}`, 120);
+            });
+        }
+
+        // Show friend details in modal
+        function showFriendModal(friend) {
+            const modal = document.getElementById('qrModal');
+            const modalContent = document.getElementById('modalContent');
+            
+            // Create modal content
+            const modalHTML = `
+                <div class="person-info" style="justify-content: center; margin-bottom: 15px;">
+                    <div class="person-icon" style="width: 80px; height: 80px; font-size: 32px;">
+                        <i class="fas fa-user"></i>
+                    </div>
+                    <div style="margin-left: 20px;">
+                        <h2 class="modal-person-name">${friend.name}</h2>
+                        <p class="person-role">${friend.role}</p>
+                    </div>
+                </div>
+                
+                <div class="modal-person-details">
+                    <p><i class="fas fa-envelope"></i> <strong>Email:</strong> ${friend.email}</p>
+                    <p><i class="fas fa-phone"></i> <strong>Phone:</strong> ${friend.phone}</p>
+                    <p><i class="fas fa-map-marker-alt"></i> <strong>Location:</strong> ${friend.location}</p>
+                    <p><i class="fas fa-heart"></i> <strong>Interests:</strong> ${friend.interests}</p>
+                    <p><i class="fas fa-calendar-alt"></i> <strong>Member since:</strong> ${friend.joined}</p>
+                </div>
+                
+                <div class="modal-qr-code" id="modalQRCode${friend.id}"></div>
+                
+                <div class="scan-instruction">
+                    <i class="fas fa-mobile-alt"></i> Scan this QR code with your mobile device to save ${friend.name.split(' ')[0]}'s contact
+                </div>
+            `;
+            
+            modalContent.innerHTML = modalHTML;
+            
+            // Generate larger QR code for modal
+            const qrData = JSON.stringify({
+                name: friend.name,
+                role: friend.role,
+                email: friend.email,
+                phone: friend.phone,
+                location: friend.location,
+                interests: friend.interests,
+                platform: "QR Connect"
+            });
+            
+            // Generate QR code for modal
+            const qr = qrcode(0, 'M');
+            qr.addData(qrData);
+            qr.make();
+            
+            const modalQRElement = document.getElementById(`modalQRCode${friend.id}`);
+            if (modalQRElement) {
+                modalQRElement.innerHTML = qr.createImgTag(8);
+                const img = modalQRElement.querySelector('img');
+                img.style.width = '200px';
+                img.style.height = '200px';
+                
+                // Add center icon to QR code
+                const centerIcon = document.createElement('div');
+                centerIcon.className = 'qr-center-icon';
+                centerIcon.style.width = '50px';
+                centerIcon.style.height = '50px';
+                centerIcon.style.fontSize = '22px';
+                centerIcon.innerHTML = '<i class="fas fa-user"></i>';
+                modalQRElement.appendChild(centerIcon);
+            }
+            
+            // Show modal
+            modal.classList.add('active');
+            document.body.style.overflow = 'hidden';
+        }
+
+        // Close modal
+        document.getElementById('modalClose').addEventListener('click', () => {
+            const modal = document.getElementById('qrModal');
+            modal.classList.remove('active');
+            document.body.style.overflow = 'auto';
+        });
+
+        // Close modal when clicking outside
+        document.getElementById('qrModal').addEventListener('click', (e) => {
+            if (e.target === document.getElementById('qrModal')) {
+                const modal = document.getElementById('qrModal');
+                modal.classList.remove('active');
+                document.body.style.overflow = 'auto';
+            }
+        });
+
+        // Simulate QR code scanner (for demonstration)
+        document.getElementById('scanQRBtn').addEventListener('click', () => {
+            alert("QR Code Scanner would open here in a real application. For this demo, you can scan the QR codes displayed on the cards.");
+            
+            // In a real app, this would open the device camera for scanning
+            // For demo purposes, we'll simulate scanning a random friend
+            const randomFriend = friends[Math.floor(Math.random() * friends.length)];
+            
+            // Show the scanned friend in modal
+            showFriendModal(randomFriend);
+        });
+
+        // Initialize the app
+        document.addEventListener('DOMContentLoaded', () => {
+            createFriendCards();
+            
+            // Add keyboard support for closing modal with ESC key
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape') {
+                    const modal = document.getElementById('qrModal');
+                    if (modal.classList.contains('active')) {
+                        modal.classList.remove('active');
+                        document.body.style.overflow = 'auto';
+                    }
+                }
+            });
+        });
+
+        // Add a simple animation for cards on load
+        window.addEventListener('load', () => {
+            const cards = document.querySelectorAll('.person-card');
+            cards.forEach((card, index) => {
+                card.style.opacity = '0';
+                card.style.transform = 'translateY(20px)';
+                
+                setTimeout(() => {
+                    card.style.transition = 'opacity 0.5s ease, transform 0.5s ease';
+                    card.style.opacity = '1';
+                    card.style.transform = 'translateY(0)';
+                }, index * 150);
+            });
+        });
+    </script>
+</body>
+</html>
